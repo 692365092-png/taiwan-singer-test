@@ -54,7 +54,7 @@ const questions = [
   },
 
   {
-    q: "11. 朋友难过朝你倾诉时，你通常会：",
+    q: "11. 朋友难过时你通常会：",
     options: ["陪着TA就好", "帮TA分析问题", "共情TA的情绪", "安慰并给建议"],
     map: ["F","T","F","T"]
   },
@@ -86,7 +86,7 @@ const questions = [
   },
   {
     q: "17. 做事情时你更像：",
-    options: ["看状态，走一步看一步", "按照计划稳稳推进", "到死线集中冲一波", "有计划但会调整节奏"],
+    options: ["看状态走一步算一步", "按照计划稳稳推进", "到死线集中冲一波", "有计划但会调整节奏"],
     map: ["P","J","P","J"]
   },
   {
@@ -100,12 +100,11 @@ const questions = [
     map: ["P","J","P","J"]
   },
   {
-    q: "20. 当完成一件事需要的时间很紧的时候，你通常会：",
-    options: ["容易慌但会补救", "提前规划避免压力", "压力来了才爆发", "开始加快节奏处理"],
+    q: "20. 时间很紧时你通常会：",
+    options: ["容易慌但会补救", "提前规划避免压力", "压力来了才爆发", "加快节奏处理"],
     map: ["P","J","P","J"]
   },
 ];
-;
 
 const singers = [
   { name: "蔡健雅", type: "INTJ" },
@@ -123,36 +122,57 @@ const singers = [
   { name: "孙燕姿", type: "ISTP" },
   { name: "王心凌", type: "ISFP" },
   { name: "杨丞琳", type: "ESFP" },
-  { name: "张惠妹", type: "ESTP" }
+  { name: "萧亚轩", type: "ESTP" }
 ];
 
 export default function App() {
   const [index, setIndex] = useState(0);
-  const [scores, setScores] = useState(
-    Object.fromEntries(singers.map(s => [s.name, 0]))
-  );
+
+  const [scores, setScores] = useState({
+    I: 0, E: 0,
+    S: 0, N: 0,
+    T: 0, F: 0,
+    J: 0, P: 0
+  });
+
   const [result, setResult] = useState(null);
 
   const handle = (i) => {
     const type = questions[index].map[i];
     const newScores = { ...scores };
 
-    singers.forEach(s => {
-      let add = 0;
-      if (s.type[0] === type[0]) add++;
-      if (s.type[1] === type[1]) add++;
-      if (s.type[2] === type[2]) add++;
-      if (s.type[3] === type[3]) add++;
-      newScores[s.name] += add;
-    });
+    // ✔ 维度计分
+    newScores[type[0]] += 1;
+    newScores[type[1]] += 1;
 
     setScores(newScores);
 
     if (index + 1 < questions.length) {
       setIndex(index + 1);
     } else {
-      const sorted = Object.entries(newScores)
-        .sort((a, b) => b[1] - a[1])
+      const mbti =
+        (newScores.I >= newScores.E ? "I" : "E") +
+        (newScores.S >= newScores.N ? "S" : "N") +
+        (newScores.T >= newScores.F ? "T" : "F") +
+        (newScores.J >= newScores.P ? "J" : "P");
+
+      // 🎲 概率模型（高级核心）
+      const ranked = singers.map(s => {
+        let score = 0;
+
+        if (s.type[0] === mbti[0]) score += 40;
+        if (s.type[1] === mbti[1]) score += 40;
+        if (s.type[2] === mbti[2]) score += 40;
+        if (s.type[3] === mbti[3]) score += 40;
+
+        // 🔥 随机扰动（关键）
+        score += Math.random() * 20;
+
+        return { ...s, score };
+      });
+
+      const sorted = ranked
+        .sort((a, b) => b.score - a.score)
         .slice(0, 3);
 
       setResult(sorted);
@@ -165,13 +185,13 @@ export default function App() {
         <h1>🎤 你的女歌手人格结果</h1>
 
         <h2>🥇 最像：</h2>
-        <h1>{result[0][0]}</h1>
+        <h1>{result[0]?.name}</h1>
 
         <h2>🥈 也很像：</h2>
-        <p>{result[1][0]}</p>
+        <p>{result[1]?.name}</p>
 
         <h2>🥉 还有点像：</h2>
-        <p>{result[2][0]}</p>
+        <p>{result[2]?.name}</p>
 
         <button onClick={() => location.reload()}>
           再测一次
